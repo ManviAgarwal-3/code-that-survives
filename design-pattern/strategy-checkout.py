@@ -1,41 +1,55 @@
 from abc import ABC, abstractmethod
 
+# ============================================================
+# PRICING STRATEGY PATTERN FOR CAB BOOKING SYSTEM
+# ============================================================
+
 #The "Algorithm" Blueprint (Interface)
-class ShippingStrategy(ABC):
+class PricingStrategy(ABC):
     @abstractmethod
-    def calculate_cost(self, weight):
-        """All strategies must implement this method"""
+    def calculate_fare(self, distance_km):
+        """All pricing strategies must implement this method"""
         pass
 
 
-# The Concrete Strategies
-class FedExStrategy(ShippingStrategy):
-    def calculate_cost(self, weight):
-        # FedEx: Flat $10 + $2 per kg
-        return 10 + (weight * 2)
+# The Concrete Pricing Strategies
+class NormalPricing(PricingStrategy):
+    """Standard pricing: ₹10 per km"""
+    BASE_FARE = 50  # Base amount
+    PER_KM_RATE = 10
+    
+    def calculate_fare(self, distance_km):
+        return self.BASE_FARE + (distance_km * self.PER_KM_RATE)
 
-class PostalStrategy(ShippingStrategy):
-    def calculate_cost(self, weight):
-        # Postal: No flat fee, just $1.5 per kg
-        return weight * 1.5
 
-# The Context (The Order)
-class Order:
-    def __init__(self, weight, strategy: ShippingStrategy):
-        self.weight = weight
+class SurgePricing(PricingStrategy):
+    """Surge pricing: ₹25 per km (peak hours)"""
+    BASE_FARE = 100
+    PER_KM_RATE = 25
+    
+    def calculate_fare(self, distance_km):
+        return self.BASE_FARE + (distance_km * self.PER_KM_RATE)
+
+
+# The Context (The Booking)
+class Booking:
+    def __init__(self, distance_km, strategy: PricingStrategy):
+        self.distance_km = distance_km
         self.strategy = strategy  # This is the "brain" that can be swapped!
 
-    def shipping_fee(self):
-        # The Order doesn't know the math; it asks the Strategy
-        return self.strategy.calculate_cost(self.weight)
+    def calculate_price(self):
+        # The Booking doesn't know the pricing logic; it asks the Strategy
+        return self.strategy.calculate_fare(self.distance_km)
 
 
-# HOW TO USE IT
-# Initial choice: FedEx
-my_order = Order(weight=5, strategy=FedExStrategy())
-print(f"FedEx Shipping: ${my_order.shipping_fee()}")
+# ============================================================
+# EXAMPLE USAGE (can be removed later)
+# ============================================================
+if __name__ == "__main__":
+    # Initial choice: Normal Pricing
+    booking = Booking(distance_km=5, strategy=NormalPricing())
+    print(f"Normal Pricing for 5 km: ₹{booking.calculate_price()}")
 
-
-# Change strategy at runtime (User finds a cheaper option)
-my_order.strategy = PostalStrategy()
-print(f"Postal Shipping: ${my_order.shipping_fee()}")
+    # Change strategy at runtime (Surge pricing during peak hours)
+    booking.strategy = SurgePricing()
+    print(f"Surge Pricing for 5 km: ₹{booking.calculate_price()}")
